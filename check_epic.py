@@ -89,8 +89,13 @@ for item in elements:
         if not image_url and key_images:
             image_url = key_images[0].get("url")
 
-        # Format readable end date
-        end_date_str = raw_end_date[:10]
+        # Format readable end date into DD/MM/YYYY
+        try:
+            parsed_end = datetime.fromisoformat(raw_end_date.replace("Z", "+00:00"))
+            end_date_str = parsed_end.strftime("%d/%m/%Y")
+        except Exception:
+            parts = raw_end_date[:10].split("-")
+            end_date_str = f"{parts[2]}/{parts[1]}/{parts[0]}" if len(parts) == 3 else raw_end_date[:10]
 
         embed = {
             "title": f"🎮 Free Game on Epic: {title}",
@@ -99,7 +104,7 @@ for item in elements:
             "color": 3447003,
             "fields": [
                 {"name": "Price", "value": "~~100% Free~~", "inline": True},
-                {"name": "Claim Before", "value": end_date_str, "inline": True},
+                {"name": "Claim By", "value": end_date_str, "inline": True},
             ],
             "footer": {"text": "Epic Games Promotion"}
         }
