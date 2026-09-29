@@ -1,0 +1,27 @@
+name: Check Epic Games Freebies
+
+on:
+  schedule:
+    # Runs every Thursday at 16:15 UTC
+    - cron: '15 16 * * 4'
+  workflow_dispatch: # Allows manual trigger anytime from the Actions tab
+
+jobs:
+  check-games:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Run Notifier
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python check_epic.py
