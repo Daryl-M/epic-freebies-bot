@@ -1,15 +1,15 @@
 # 🎮 Epic Games Freebies Discord Notifier
 
-A lightweight, zero-cost, privacy-first automation tool that checks the Epic Games Store for weekly free games and sends rich embeds to your Discord server via Webhooks.
+A lightweight, zero-cost, privacy-first automation tool that checks the Epic Games Store for free games and sends rich embeds to your Discord server via Webhooks.
 
-No third-party Discord bots, no server permissions required, and no persistent server hosting needed. Runs entirely on **GitHub Actions**.
+Supports both standard **weekly giveaways** and **daily 24-hour event promotions** (e.g. holiday mystery drops). No third-party Discord bots, no server permissions required, and no persistent server hosting needed. Runs entirely on **GitHub Actions**.
 
 ---
 
 ## ✨ Features
 
-- **Automated Scheduling:** Runs automatically every Thursday at 16:15 UTC (when Epic rotates weekly titles).
-- **Manual Trigger Support:** Run on demand anytime from the GitHub Actions tab.
+- **Daily & Event Ready:** Runs automatically every day at 16:15 UTC, catching both weekly rotations and rapid 24-hour event drops.
+- **Smart Deduplication:** Tracks individual promotional windows (`Title_EndDate`). Active offers are never spammed, but titles given away again in future promotions will still trigger alerts.
 - **Rich Embeds:** Posts game artwork, summary descriptions, claim expiration dates, and direct store links.
 - **Privacy-First:** Your Discord server remains completely private—only a standard incoming webhook URL is used.
 - **100% Free:** Operates well within GitHub Actions' free runner allowance.
@@ -21,9 +21,10 @@ No third-party Discord bots, no server permissions required, and no persistent s
 ```text
 ├── .github/
 │   └── workflows/
-│       └── epic_freebies.yml   # Cron workflow & GitHub Actions runner
-├── check_epic.py               # Python scraper & Discord webhook dispatcher
-└── README.md                   # Documentation
+│       └── epic_freebies.yml    # Daily cron workflow & Git commit automation
+├── check_epic.py                # Promotion scraper & Discord webhook dispatcher
+├── posted_promotions.json       # Auto-generated cache tracking announced promos
+└── README.md                    # Documentation
 ```
 
 ---
@@ -51,15 +52,25 @@ No third-party Discord bots, no server permissions required, and no persistent s
 
 ---
 
-### 3. Test the Automation
-1. Go to the **Actions** tab at the top of your repository.
-2. Select **Check Epic Games Freebies** from the left workflow menu.
-3. Click the **Run workflow** dropdown on the right and click the green **Run workflow** button.
-4. Once completed (green checkmark), check your Discord channel for the new freebie announcement!
+### 3. Enable Workflow Permissions (Required for Cache)
+Because the workflow automatically commits and saves `posted_promotions.json` back to your repo to prevent duplicate announcements:
+
+1. In your GitHub repository, go to **Settings** ➔ **Actions** ➔ **General**.
+2. Scroll down to **Workflow permissions**.
+3. Select **Read and write permissions**.
+4. Click **Save**.
 
 ---
 
-## 🛠️ Local Development & Testing
+### 4. Test the Automation
+1. Go to the **Actions** tab at the top of your repository.
+2. Select **Check Epic Games Freebies** from the left workflow menu.
+3. Click the **Run workflow** dropdown on the right and click the green **Run workflow** button.
+4. Once completed, check your Discord channel for the announcements!
+
+---
+
+## 🛠️️ Local Development & Testing
 
 To test or run the script locally on your machine:
 
@@ -86,6 +97,7 @@ python check_epic.py
 ## ⚙️ How It Works
 
 1. Queries the official Epic Games Promotions API (`/freeGamesPromotions`).
-2. Filters items where `discountPercentage == 0` and the current date falls between the promotion's start and end timestamps.
-3. Formats an embed payload with the game's title, synopsis, promotional banner, and claim URL.
-4. Dispatches the embed to the Discord channel using an HTTP `POST` request to the webhook URL.
+2. Identifies active offers where `discountPercentage == 0` within current timestamp boundaries.
+3. Compares each offer's unique fingerprint (`Title_EndDate`) against `posted_promotions.json`.
+4. Sends Discord embeds for any unposted promotions and updates the cache file.
+5. GitHub Actions commits the updated cache back to the repository with `[skip ci]`.
